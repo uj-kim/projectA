@@ -19,8 +19,8 @@ import { ALL_CATEGORY_ID, categories } from '@/constants';
 import React, { useState } from 'react';
 
 import { createNewProduct, initialProductState } from '@/helpers/product';
-import { useAppDispatch } from '@/store/hooks';
-import { addProduct } from '@/store/product/productsActions';
+// import { addProduct } from '@/store/product/productsActions';
+import { useAddProduct } from '../../../store/product/useProductStore';
 import { uploadImage } from '@/utils/imageUpload';
 
 export const ProductRegistrationModal = ({
@@ -28,8 +28,8 @@ export const ProductRegistrationModal = ({
   onClose,
   onProductAdded,
 }) => {
-  const dispatch = useAppDispatch();
   const [product, setProduct] = useState(initialProductState);
+  const { mutate: addProduct } = useAddProduct();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,22 +45,26 @@ export const ProductRegistrationModal = ({
   };
 
   const handleSubmit = async () => {
+    if (!product.image) {
+      console.error('이미지를 선택해야 합니다.');
+      return;
+    }
+
     try {
-      if (!product.image) {
-        throw new Error('이미지를 선택해야 합니다.');
-      }
-
       const imageUrl = await uploadImage(product.image);
-      if (!imageUrl) {
-        throw new Error('이미지 업로드에 실패했습니다.');
-      }
-
       const newProduct = createNewProduct(product, imageUrl);
-      await dispatch(addProduct(newProduct));
-      onClose();
-      onProductAdded();
+
+      addProduct(newProduct, {
+        onSuccess: () => {
+          onClose();
+          onProductAdded();
+        },
+        onError: (error) => {
+          console.error('이미지 업로드에 실패했습니다.', error.message);
+        },
+      });
     } catch (error) {
-      console.error('물품 등록에 실패했습니다.', error);
+      console.error('물품 등록에 실패했습니다.', error.message);
     }
   };
 
