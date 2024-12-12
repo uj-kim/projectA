@@ -11,12 +11,11 @@ import { pageRoutes } from '@/apiRoutes';
 import { EMAIL_PATTERN } from '@/constants';
 import { auth } from '@/firebase';
 import { Layout, authStatusType } from '@/pages/common/components/Layout';
-import { setIsLogin, setUser } from '@/store/auth/authSlice';
-import { useAppDispatch } from '@/store/hooks';
+import useAuthStore, { useRegisterUser } from '../../store/auth/useAuth';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
+  const { setIsLogin, setUser } = useAuthStore(); //zustand 액션
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -43,38 +42,24 @@ export const LoginPage = () => {
   const handleClickLoginButton = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      try {
-        const userCredential = await signInWithEmailAndPassword(
-          auth,
-          email,
-          password
-        );
-        const user = userCredential.user;
-        const token = await user.getIdToken();
-
-        Cookies.set('accessToken', token, { expires: 7 });
-
-        dispatch(setIsLogin(true));
-        if (user) {
-          dispatch(
-            setUser({
-              uid: user.uid,
-              email: user.email ?? '',
-              displayName: user.displayName ?? '',
-            })
-          );
+      //useAuth - tanstack query
+      useRegisterUser().mutate(
+        { email, password },
+        {
+          //기존 try문(성공하면)
+          onSuccess: (user) => {
+            setIsLogin(true); //zustand 상태 업데이트
+            setUser(user); // 사용자 정보 저장
+            navigate(pageRoutes.main); // 메인페이지 이동
+          },
+          //기존의 catch문(실패)
+          onError: (error) => {
+            setErrors({
+              form: '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
+            });
+          },
         }
-
-        navigate(pageRoutes.main);
-      } catch (error) {
-        console.error(
-          '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
-          error
-        );
-        setErrors({
-          form: '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
-        });
-      }
+      );
     }
   };
 
