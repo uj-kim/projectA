@@ -1,26 +1,33 @@
-import { createAsyncThunk } from '@reduxjs/toolkit';
 import { fetchProducts, addProductAPI } from '@/api/product';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
-export const loadProducts = createAsyncThunk(
-  'products/loadProducts',
-  async ({ filter, pageSize, page, isInitial }, { rejectWithValue }) => {
-    try {
+export const useLoadProducts = ({ filter, pageSize, page }) => {
+  return useQuery(
+    ['products', filter, pageSize, page], // 쿼리 키
+    async () => {
       const result = await fetchProducts(filter, pageSize, page);
-      return { ...result, isInitial };
-    } catch (error) {
-      return rejectWithValue(error.message);
+      return result;
+    },
+    {
+      staleTime: 5 * 60 * 1000,
+      cacheTime: 10 * 60 * 1000,
+      onError: (error) => {
+        console.error(error.message);
+      },
     }
-  }
-);
+  );
+};
 
-export const addProduct = createAsyncThunk(
-  'products/addProduct',
-  async (productData, { rejectWithValue }) => {
-    try {
+export const useAddProduct = () => {
+  return useMutation(
+    async (productData) => {
       const newProduct = await addProductAPI(productData);
       return newProduct;
-    } catch (error) {
-      return rejectWithValue(error.message);
+    },
+    {
+      onError: (error) => {
+        console.log(error.message);
+      },
     }
-  }
-);
+  );
+};

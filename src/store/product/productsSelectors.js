@@ -1,5 +1,15 @@
-export const selectProducts = (state) => state.products.items;
-export const selectHasNextPage = (state) => state.products.hasNextPage;
-export const selectIsLoading = (state) => state.products.isLoading;
-export const selectError = (state) => state.products.error;
-export const selectTotalCount = (state) => state.products.totalCount;
+const useProductsData = ({ filter, pageSize, page }) => {
+  const { data, isLoading, error } = useLoadProducts({
+    filter,
+    pageSize,
+    page,
+  });
+
+  return {
+    products: data?.items || [],
+    hasNextPage: data?.hasNextPage || false,
+    isLoading,
+    error,
+    totalCount: data?.totalCount || 0,
+  };
+};

@@ -1,49 +1,40 @@
-import { createSlice } from '@reduxjs/toolkit';
-import { loadProducts, addProduct } from './productsActions';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { fetchProducts, addProductAPI } from '@/api/product';
 
-const initialState = {
-  items: [],
-  hasNextPage: true,
-  isLoading: false,
-  error: null,
-  totalCount: 0,
+export const useLoadProducts = ({ filter, pageSize, page }) => {
+  return useQuery(
+    ['products', filter, pageSize, page],
+    async () => {
+      const result = await fetchProducts(filter, pageSize, page);
+      return result;
+    },
+    {
+      staleTime: 5 * 60 * 1000,
+      cacheTime: 10 * 60 * 1000,
+      onError: (error) => {
+        console.error(error.message);
+      },
+    }
+  );
 };
 
-const productsSlice = createSlice({
-  name: 'products',
-  initialState,
-  reducers: {},
-  extraReducers: (builder) => {
-    builder
-      .addCase(loadProducts.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(loadProducts.fulfilled, (state, action) => {
-        const { products, hasNextPage, totalCount, isInitial } = action.payload;
-        state.items = isInitial ? products : [...state.items, ...products];
-        state.hasNextPage = hasNextPage;
-        state.totalCount = totalCount;
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(loadProducts.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload;
-      })
-      .addCase(addProduct.pending, (state) => {
-        state.isLoading = true;
-      })
-      .addCase(addProduct.fulfilled, (state, action) => {
-        state.items.unshift(action.payload);
-        state.totalCount += 1;
-        state.isLoading = false;
-        state.error = null;
-      })
-      .addCase(addProduct.rejected, (state, action) => {
-        state.isLoading = false;
-        state.error = action.payload || '상품 등록에 실패하였습니다.';
-      });
-  },
-});
+export const useAddProduct = () => {
+  const queryClient = useQueryClient();
 
-export default productsSlice.reducer;
+  return useMutation(
+    async (productData) => {
+      const newProduct = await addProductAPI(productData);
+      return newProduct;
+    },
+    {
+      onSuccess: (newProduct) => {
+        // 캐시 무효화: products 키의 데이터를 새로고침
+        queryClient.invalidateQueries(['products']);
+        console.log('Product added successfully:', newProduct);
+      },
+      onError: (error) => {
+        console.error(error.message);
+      },
+    }
+  );
+};

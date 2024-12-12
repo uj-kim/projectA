@@ -8,26 +8,26 @@ import { useNavigate } from 'react-router-dom';
 import { pageRoutes } from '@/apiRoutes';
 import { EMAIL_PATTERN } from '@/constants';
 import { Layout, authStatusType } from '@/pages/common/components/Layout';
-import { registerUser } from '@/store/auth/authActions';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+// import { registerUser } from '@/store/auth/authActions';
+// import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import useRegisterUser from '../../store/auth/authActions';
+import useAuthStore from '../../store/auth/authSlice';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const { registerStatus, registerError } = useAppSelector(
-    (state) => state.auth
-  );
+  const { mutate: registerUser, isLoading, error } = useRegisterUser();
+  const setUser = useAuthStore((state) => state.setUser);
 
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState({});
 
-  useEffect(() => {
-    if (registerStatus === 'succeeded') {
-      navigate(pageRoutes.login);
-    }
-  }, [registerStatus, navigate]);
+  // useEffect(() => {
+  //   if (registerStatus === 'succeeded') {
+  //     navigate(pageRoutes.login);
+  //   }
+  // }, [registerStatus, navigate]);
 
   const validateForm = () => {
     let formErrors = {};
@@ -45,16 +45,31 @@ export const RegisterPage = () => {
   const handleRegister = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      try {
-        await dispatch(registerUser({ email, password, name })).unwrap();
-        console.log('가입 성공!');
-        navigate(pageRoutes.login);
-      } catch (error) {
-        console.error(
-          '회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.',
-          error
-        );
-      }
+      // try {
+      //   await dispatch(registerUser({ email, password, name })).unwrap();
+      //   console.log('가입 성공!');
+      //   navigate(pageRoutes.login);
+      // } catch (error) {
+      //   console.error(
+      //     '회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.',
+      //     error
+      //   );
+      registerUser(
+        { email, password, name },
+        {
+          onSuccess: (data) => {
+            console.log('가입 성공!');
+            setUser(data);
+            navigate(pageRoutes.login);
+          },
+          onError: (error) => {
+            console.error(
+              '회원가입 중 오류가 발생했습니다. 다시 시도해 주세요.',
+              error.message
+            );
+          },
+        }
+      );
     }
   };
 
