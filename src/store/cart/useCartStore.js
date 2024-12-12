@@ -1,5 +1,5 @@
 import create from 'zustand';
-import { calculateTotal } from './cartUtils';
+import { calculateTotal, setCartToLocalStorage } from './cartUtils';
 
 const useCartStore = create((set) => ({
   cart: [],
@@ -46,8 +46,36 @@ const useCartStore = create((set) => ({
       };
     });
   },
+  //removeCartItem
+  removeCartItem: (itemId, userId, setCartToLocalStorage) => {
+    set((state) => {
+      const updatedCart = state.cart.filter((item) => item.id !== itemId);
+      const total = calculateTotal(updatedCart);
+      setCartToLocalStorage(updatedCart, userId);
 
-  // removeCartItem and changeCartItemCount implementations here...
+      return {
+        cart: updatedCart,
+        totalCount: total.totalCount,
+        totalPrice: total.totalPrice,
+      };
+    });
+  },
+  //chartgeCartItemCount
+  changeCartItemCount: (itemId, count, userId, setCartToLocalStorage) => {
+    set((state) => {
+      const updatedCart = state.cart.map((item) =>
+        item.id === itemId ? { ...item, count } : item
+      );
+      const total = calculateTotal(updatedCart);
+      setCartToLocalStorage(updatedCart, userId);
+
+      return {
+        cart: updatedCart,
+        totalCount: total.totalCount,
+        totalPrice: total.totalPrice,
+      };
+    });
+  },
 }));
 
 export default useCartStore;

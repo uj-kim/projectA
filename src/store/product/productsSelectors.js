@@ -13,3 +13,5 @@ const useProductsData = ({ filter, pageSize, page }) => {
     totalCount: data?.totalCount || 0,
   };
 };
+
+export default useProductsData;

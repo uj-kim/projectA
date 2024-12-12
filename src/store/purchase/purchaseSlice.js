@@ -1,30 +1,14 @@
-import { createSlice } from '@reduxjs/toolkit';
+import create from 'zustand';
 
-const initialState = {
+const usePurchaseStore = create((set) => ({
+  // 초기 상태
   isLoading: false,
   error: null,
-};
 
-const purchaseSlice = createSlice({
-  name: 'purchase',
-  initialState,
-  reducers: {
-    purchaseStart: (state) => {
-      state.isLoading = true;
-      state.error = null;
-    },
-    purchaseSuccess: (state) => {
-      state.isLoading = false;
-      state.error = null;
-    },
-    purchaseFailure: (state, action) => {
-      state.isLoading = false;
-      state.error = action.payload;
-    },
-  },
-});
+  // 상태 변경 함수 (액션)
+  purchaseStart: () => set({ isLoading: true, error: null }),
+  purchaseSuccess: () => set({ isLoading: false, error: null }),
+  purchaseFailure: (error) => set({ isLoading: false, error }),
+}));
 
-export const { purchaseStart, purchaseSuccess, purchaseFailure } =
-  purchaseSlice.actions;
-
-export default purchaseSlice.reducer;
+export default usePurchaseStore;

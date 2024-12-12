@@ -6,14 +6,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ProductInfoTableRow } from '@/pages/cart/components/ProductInfoTableRow';
-import { selectUser } from '@/store/auth/authSelectors';
-import { selectCart } from '@/store/cart/cartSelectors';
-import { useAppSelector } from '@/store/hooks';
+import useAuthStore from '../../../store/auth/useAuth';
+import useCartStore from '../../../store/cart/useCartStore';
 import React from 'react';
 
 export const ProductInfoTable = () => {
-  const cart = useAppSelector(selectCart);
-  const user = useAppSelector(selectUser);
+  const { cart } = useCartStore(); //zustand cart 상태 가져오기
+  const { user } = useAuthStore(); //zustand user 상태 가져오기
 
   return (
     <Table>
