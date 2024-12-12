@@ -13,22 +13,14 @@ import { Layout, authStatusType } from '@/pages/common/components/Layout';
 import { ItemList } from '@/pages/purchase/components/ItemList';
 import { Payment } from '@/pages/purchase/components/Payment';
 import { ShippingInformationForm } from '@/pages/purchase/components/ShippingInformationForm';
-import { selectUser } from '@/store/auth/authSelectors';
-import { selectCart } from '@/store/cart/cartSelectors';
-import { resetCart } from '@/store/cart/cartSlice';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import {
-  purchaseFailure,
-  purchaseStart,
-  purchaseSuccess,
-} from '@/store/purchase/purchaseSlice';
+import useCartStore from '../../store/cart/useCartStore';
+import { useAuthStore } from '../../store/auth/useAuth';
+import { useMutation } from '@tanstack/react-query';
 
 export const Purchase = () => {
-  const dispatch = useAppDispatch();
   const navigate = useNavigate();
-  const user = useAppSelector(selectUser);
-  const cart = useAppSelector(selectCart);
-  const { isLoading } = useAppSelector((state) => state.purchase);
+  const { cart, resetCart } = useCartStore();
+  const { user } = useAuthStore();
 
   const [formData, setFormData] = useState({
     name: user?.displayName ?? '',
@@ -40,6 +32,7 @@ export const Purchase = () => {
 
   const [errors, setErrors] = useState({
     phone: '',
+    server: '', //서버에러
   });
 
   const [isFormValid, setIsFormValid] = useState(false);
@@ -70,7 +63,6 @@ export const Purchase = () => {
     e.preventDefault();
     if (!isFormValid || !user) return;
 
-    dispatch(purchaseStart());
     const purchaseData = {
       ...formData,
       totalAmount: 0,
@@ -78,27 +70,32 @@ export const Purchase = () => {
       shippingAddress: formData.address,
     };
 
-    try {
+    handlePurchase(purchaseData);
+  };
+
+  const { mutate: handlePurchase, isLoading } = useMutation({
+    mutationFn: async (purchaseData) => {
+      if (!user) throw new Error('로그인이 필요합니다.');
       await makePurchase(purchaseData, user.uid, cart);
-      dispatch(purchaseSuccess());
+    },
+    onSuccess: () => {
       if (user) {
-        dispatch(resetCart(user.uid));
+        resetCart(user.uid); // Zustand로 장바구니 초기화
       }
       console.log('구매 성공!');
-      navigate(pageRoutes.main);
-    } catch (err) {
-      if (err instanceof Error) {
-        dispatch(purchaseFailure(err.message));
-        console.error(
-          '잠시 문제가 발생했습니다! 다시 시도해 주세요.',
-          err.message
-        );
-      } else {
-        dispatch(purchaseFailure('알 수 없는 오류가 발생했습니다.'));
-        console.error('잠시 문제가 발생했습니다! 다시 시도해 주세요.');
-      }
-    }
-  };
+      navigate(pageRoutes.main); // 메인 페이지로 이동
+    },
+    onError: (error) => {
+      console.error(
+        '구매 처리 중 문제가 발생했습니다:',
+        error instanceof Error ? error.message : '알 수 없는 오류'
+      );
+      setErrors((prev) => ({
+        ...prev,
+        server: '구매 처리 중 문제가 발생했습니다. 다시 시도해주세요.',
+      }));
+    },
+  });
 
   return (
     <Layout
