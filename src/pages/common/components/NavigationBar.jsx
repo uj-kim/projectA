@@ -8,7 +8,8 @@ import { useNavigate } from 'react-router-dom';
 
 import { Skeleton } from '@/components/ui/skeleton';
 import { useModal } from '@/hooks/useModal';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import useCartStore from '../../../store/cart/useCartStore';
+import { useAuthStore } from '../../../store/auth/useAuth';
 import { CartButton } from './CartButton';
 import { ConfirmModal } from './ConfirmModal';
 import { LoginButton } from './LoginButton';
@@ -16,23 +17,29 @@ import { LogoutButton } from './LogoutButton';
 
 export const NavigationBar = () => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { isOpen, openModal, closeModal } = useModal();
-  const { isLogin, user } = useAppSelector((state) => state.auth);
-  const { cart } = useAppSelector((state) => state.cart);
+  const { isLogin, user, logout } = useAuthStore((state) => ({
+    isLogin: state.isLogin,
+    user: state.user,
+    logout: state.logout,
+  }));
+  const { cart, initCart } = useCartStore((state) => ({
+    cart: state.cart,
+    initCart: state.initCart,
+  }));
 
   useEffect(() => {
     if (isLogin && user && cart.length === 0) {
-      dispatch(initCart(user.uid));
+      initCart(user.uid); //zustand initCart 호출
     }
-  }, [isLogin, user, dispatch, cart.length]);
+  }, [isLogin, user, cart.length, initCart]);
 
   const handleLogout = () => {
     openModal();
   };
 
   const handleConfirmLogout = () => {
-    dispatch(logout());
+    logout(); //zustand logout 호출
     Cookies.remove('accessToken');
     closeModal();
   };
