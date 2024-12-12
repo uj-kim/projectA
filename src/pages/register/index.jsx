@@ -15,7 +15,11 @@ import useAuthStore from '../../store/auth/authSlice';
 
 export const RegisterPage = () => {
   const navigate = useNavigate();
-  const { mutate: registerUser, isLoading, error } = useRegisterUser();
+  const {
+    mutate: registerUser,
+    isLoading,
+    error: registerError,
+  } = useRegisterUser();
   const setUser = useAuthStore((state) => state.setUser);
 
   const [name, setName] = useState('');
@@ -140,15 +144,11 @@ export const RegisterPage = () => {
               <p className="text-sm text-red-500">{errors.password}</p>
             )}
           </div>
-          <Button
-            type="submit"
-            className="w-full"
-            disabled={registerStatus === 'loading'}
-          >
-            {registerStatus === 'loading' ? '가입 중...' : '회원가입'}
+          <Button type="submit" className="w-full" disabled={isLoading}>
+            {isLoading ? '가입 중...' : '회원가입'}
           </Button>
           {registerError && (
-            <p className="text-sm text-red-500">{registerError}</p>
+            <p className="text-sm text-red-500">{registerError.message}</p>
           )}
         </form>
       </div>

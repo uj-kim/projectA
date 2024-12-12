@@ -1,23 +1,25 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchProducts, addProductAPI } from '@/api/product';
 
-export const useLoadProducts = ({ filter, pageSize, page }) => {
+// Fetch products (React Query)
+export const useProductsData = ({ filter, pageSize, page }) => {
   return useQuery(
-    ['products', filter, pageSize, page],
+    ['products', filter, pageSize, page], // 쿼리 키
     async () => {
       const result = await fetchProducts(filter, pageSize, page);
       return result;
     },
     {
-      staleTime: 5 * 60 * 1000,
-      cacheTime: 10 * 60 * 1000,
+      staleTime: 5 * 60 * 1000, // 데이터가 신선하다고 간주되는 시간
+      cacheTime: 10 * 60 * 1000, // 캐시 유지 시간
       onError: (error) => {
-        console.error(error.message);
+        console.error('Error loading products:', error.message);
       },
     }
   );
 };
 
+// Add product (React Query)
 export const useAddProduct = () => {
   const queryClient = useQueryClient();
 
@@ -28,12 +30,12 @@ export const useAddProduct = () => {
     },
     {
       onSuccess: (newProduct) => {
-        // 캐시 무효화: products 키의 데이터를 새로고침
+        // Optimistic update or cache invalidation
         queryClient.invalidateQueries(['products']);
         console.log('Product added successfully:', newProduct);
       },
       onError: (error) => {
-        console.error(error.message);
+        console.error('Error adding product:', error.message);
       },
     }
   );
