@@ -6,14 +6,13 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ProductInfoTableRow } from '@/pages/cart/components/ProductInfoTableRow';
-import { selectUser } from '@/store/auth/authSelectors';
-import { selectCart } from '@/store/cart/cartSelectors';
-import { useAppSelector } from '@/store/hooks';
+import useAuthStore from '@/store/auth/authStore';
+import useCartStore from '@/store/cart/useCartStore';
 import React from 'react';
 
 export const ProductInfoTable = () => {
-  const cart = useAppSelector(selectCart);
-  const user = useAppSelector(selectUser);
+  const { user } = useAuthStore();
+  const { cart } = useCartStore();
 
   return (
     <Table>

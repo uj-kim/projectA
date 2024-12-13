@@ -3,14 +3,7 @@ import { Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
 
 import { ApiErrorBoundary } from '@/pages/common/components/ApiErrorBoundary';
-import {
-  setCategoryId,
-  setMaxPrice,
-  setMinPrice,
-  setTitle,
-} from '@/store/filter/filterActions';
-import { selectFilter } from '@/store/filter/filterSelectors';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { useFilterStore } from '@/store/filter/useFilterStore';
 import { debounce } from '@/utils/common';
 import React from 'react';
 import { CategoryRadioGroup } from './CategoryRadioGroup';
@@ -24,22 +17,22 @@ const ProductFilterBox = ({ children }) => (
 );
 
 export const ProductFilter = () => {
-  const dispatch = useAppDispatch();
-  const filterState = useAppSelector(selectFilter);
+  const { setTitle, setMinPrice, setMaxPrice, setCategoryId, categoryId } =
+    useFilterStore();
 
   const handleChangeInput = debounce((e) => {
-    dispatch(setTitle(e.target.value));
+    setTitle(e.target.value);
   }, 300);
 
-  const handlePriceChange = (actionCreator) =>
+  const handlePriceChange = (setter) =>
     debounce((e) => {
       const value = e.target.value;
       if (value === '') {
-        dispatch(actionCreator(-1));
+        setter(-1);
       } else {
         const numericValue = Math.max(0, parseInt(value, 10));
         if (!isNaN(numericValue)) {
-          dispatch(actionCreator(numericValue));
+          setter(numericValue);
         }
       }
     }, 300);
@@ -49,7 +42,7 @@ export const ProductFilter = () => {
 
   const handleChangeCategory = (value) => {
     if (value !== undefined) {
-      dispatch(setCategoryId(value));
+      setCategoryId(value);
     } else {
       console.error('카테고리가 설정되지 않았습니다.');
     }
@@ -64,7 +57,7 @@ export const ProductFilter = () => {
         <ApiErrorBoundary>
           <Suspense fallback={<Loader2 className="h-24 w-24 animate-spin" />}>
             <CategoryRadioGroup
-              categoryId={filterState.categoryId}
+              categoryId={categoryId}
               onChangeCategory={handleChangeCategory}
             />
           </Suspense>
