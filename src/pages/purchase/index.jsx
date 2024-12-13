@@ -15,11 +15,13 @@ import { Payment } from '@/pages/purchase/components/Payment';
 import { ShippingInformationForm } from '@/pages/purchase/components/ShippingInformationForm';
 import useAuthStore from '@/store/auth/authStore';
 import useCartStore from '@/store/cart/useCartStore';
+import useToastStore from '../../store/toast/useToastStore';
 
 export const Purchase = () => {
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const { cart, resetCart } = useCartStore();
+  const { addToast } = useToastStore();
 
   const [formData, setFormData] = useState({
     name: user?.displayName ?? '',
@@ -71,7 +73,7 @@ export const Purchase = () => {
     try {
       await makePurchase(purchaseData, user.uid, cart);
       resetCart(user.uid);
-      console.log('구매 성공!');
+      addToast('구매 성공!', 'success');
       navigate(pageRoutes.main);
     } catch (err) {
       if (err instanceof Error) {
@@ -80,6 +82,7 @@ export const Purchase = () => {
           err.message
         );
       } else {
+        addToast('구매 실패', 'error');
         console.error('잠시 문제가 발생했습니다! 다시 시도해 주세요.');
       }
     }
