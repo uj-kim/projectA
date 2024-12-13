@@ -23,6 +23,7 @@ import { uploadImage } from '@/utils/imageUpload';
 import useProductsStore, {
   useAddProduct,
 } from '@/store/product/useProductsStore';
+import useToastStore from '../../../store/toast/useToastStore';
 
 export const ProductRegistrationModal = ({
   isOpen,
@@ -30,6 +31,7 @@ export const ProductRegistrationModal = ({
   onProductAdded,
 }) => {
   const { mutate: addProduct } = useAddProduct();
+  const { addToast } = useToastStore();
   const [product, setProduct] = useState(initialProductState);
 
   const handleChange = (e) => {
@@ -61,12 +63,14 @@ export const ProductRegistrationModal = ({
         onSuccess: () => {
           onClose();
           onProductAdded();
+          addToast('등록 성공!', 'success');
         },
         onError: (error) => {
           console.error('물품 등록에 실패했습니다.', error);
         },
       });
     } catch (error) {
+      addToast('등록 실패', 'error');
       console.error('물품 등록에 실패했습니다.', error);
     }
   };
