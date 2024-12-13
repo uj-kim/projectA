@@ -12,10 +12,12 @@ import { EMAIL_PATTERN } from '@/constants';
 import { auth } from '@/firebase';
 import { Layout, authStatusType } from '@/pages/common/components/Layout';
 import useAuthStore from '@/store/auth/authStore';
+import useToastStore from '../../store/toast/useToastStore';
 
 export const LoginPage = () => {
   const navigate = useNavigate();
   const { setUser, setIsLogin } = useAuthStore();
+  const { addToast } = useToastStore();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -54,6 +56,7 @@ export const LoginPage = () => {
         Cookies.set('accessToken', token, { expires: 7 });
 
         setIsLogin(true);
+
         if (user) {
           setUser({
             uid: user.uid,
@@ -61,9 +64,10 @@ export const LoginPage = () => {
             displayName: user.displayName ?? '',
           });
         }
-
+        addToast('로그인 성공!', 'success');
         navigate(pageRoutes.main);
       } catch (error) {
+        addToast('로그인 실패', 'error');
         console.error(
           '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.',
           error
