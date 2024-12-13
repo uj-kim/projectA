@@ -8,18 +8,12 @@ import { PRODUCT_PAGE_SIZE } from '@/constants';
 import { extractIndexLink, isFirebaseIndexError } from '@/helpers/error';
 import { useModal } from '@/hooks/useModal';
 import { FirebaseIndexErrorModal } from '@/pages/error/components/FirebaseIndexErrorModal';
-import { selectIsLogin, selectUser } from '@/store/auth/authSelectors';
-import { addCartItem } from '@/store/cart/cartSlice';
-import { selectFilter } from '@/store/filter/filterSelectors';
-import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { loadProducts } from '@/store/product/productsActions';
-import {
-  selectHasNextPage,
-  selectIsLoading,
-  selectProducts,
-  selectTotalCount,
-} from '@/store/product/productsSelectors';
-
+import useAuthStore from '@/store/auth/authStore';
+import useCartStore from '@/store/cart/useCartStore';
+import { useFilterStore } from '@/store/filter/useFilterStore';
+import useProductsStore, {
+  useLoadProducts,
+} from '@/store/product/useProductsStore';
 import { ProductCardSkeleton } from '../skeletons/ProductCardSkeleton';
 import { EmptyProduct } from './EmptyProduct';
 import { ProductCard } from './ProductCard';
@@ -27,56 +21,38 @@ import { ProductRegistrationModal } from './ProductRegistrationModal';
 
 export const ProductList = ({ pageSize = PRODUCT_PAGE_SIZE }) => {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
   const { isOpen, openModal, closeModal } = useModal();
+  const { isLogin, user } = useAuthStore();
+  const { addCartItem } = useCartStore();
+  const { categoryId, minPrice, maxPrice, title } = useFilterStore();
+  const {
+    items: products,
+    hasNextPage,
+    isLoading,
+    totalCount,
+  } = useProductsStore();
   const [currentPage, setCurrentPage] = useState(1);
   const [isIndexErrorModalOpen, setIsIndexErrorModalOpen] = useState(false);
   const [indexLink, setIndexLink] = useState(null);
 
-  const products = useAppSelector(selectProducts);
-  const hasNextPage = useAppSelector(selectHasNextPage);
-  const isLoading = useAppSelector(selectIsLoading);
-  const filter = useAppSelector(selectFilter);
-  const user = useAppSelector(selectUser);
-  const isLogin = useAppSelector(selectIsLogin);
-  const totalCount = useAppSelector(selectTotalCount);
+  const filter = { categoryId, minPrice, maxPrice, title };
 
-  const loadProductsData = async (isInitial = false) => {
-    try {
-      const page = isInitial ? 1 : currentPage + 1;
-      await dispatch(
-        loadProducts({
-          filter,
-          pageSize,
-          page,
-          isInitial,
-        })
-      ).unwrap();
-      if (!isInitial) {
-        setCurrentPage(page);
-      }
-    } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
-
-      if (isFirebaseIndexError(errorMessage)) {
-        const link = extractIndexLink(errorMessage);
-        setIndexLink(link);
-        setIsIndexErrorModalOpen(true);
-      }
-      throw error;
-    }
-  };
+  const { data, refetch } = useLoadProducts({
+    filter,
+    pageSize,
+    page: currentPage,
+    isInitial: false,
+  });
 
   useEffect(() => {
     setCurrentPage(1);
-    loadProductsData(true);
-  }, [filter]);
+    refetch();
+  }, [filter, refetch]);
 
   const handleCartAction = (product) => {
     if (isLogin && user) {
       const cartItem = { ...product, count: 1 };
-      dispatch(addCartItem({ item: cartItem, userId: user.uid, count: 1 }));
+      addCartItem({ item: cartItem, userId: user.uid, count: 1 });
       console.log(`${product.title} 상품이 \n장바구니에 담겼습니다.`);
     } else {
       navigate(pageRoutes.login);
@@ -86,7 +62,7 @@ export const ProductList = ({ pageSize = PRODUCT_PAGE_SIZE }) => {
   const handlePurchaseAction = (product) => {
     if (isLogin && user) {
       const cartItem = { ...product, count: 1 };
-      dispatch(addCartItem({ item: cartItem, userId: user.uid, count: 1 }));
+      addCartItem({ item: cartItem, userId: user.uid, count: 1 });
       navigate(pageRoutes.cart);
     } else {
       navigate(pageRoutes.login);
@@ -95,7 +71,7 @@ export const ProductList = ({ pageSize = PRODUCT_PAGE_SIZE }) => {
 
   const handleProductAdded = () => {
     setCurrentPage(1);
-    loadProductsData(true);
+    refetch();
   };
 
   const firstProductImage = products[0]?.image;
@@ -146,7 +122,7 @@ export const ProductList = ({ pageSize = PRODUCT_PAGE_SIZE }) => {
             </div>
             {hasNextPage && currentPage * pageSize < totalCount && (
               <div className="flex justify-center mt-4">
-                <Button onClick={() => loadProductsData()} disabled={isLoading}>
+                <Button onClick={() => refetch()} disabled={isLoading}>
                   {isLoading ? '로딩 중...' : '더 보기'}
                   <ChevronDown className="ml-2 h-4 w-4" />
                 </Button>

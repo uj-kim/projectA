@@ -19,16 +19,17 @@ import { ALL_CATEGORY_ID, categories } from '@/constants';
 import React, { useState } from 'react';
 
 import { createNewProduct, initialProductState } from '@/helpers/product';
-import { useAppDispatch } from '@/store/hooks';
-import { addProduct } from '@/store/product/productsActions';
 import { uploadImage } from '@/utils/imageUpload';
+import useProductsStore, {
+  useAddProduct,
+} from '@/store/product/useProductsStore';
 
 export const ProductRegistrationModal = ({
   isOpen,
   onClose,
   onProductAdded,
 }) => {
-  const dispatch = useAppDispatch();
+  const { mutate: addProduct } = useAddProduct();
   const [product, setProduct] = useState(initialProductState);
 
   const handleChange = (e) => {
@@ -56,9 +57,15 @@ export const ProductRegistrationModal = ({
       }
 
       const newProduct = createNewProduct(product, imageUrl);
-      await dispatch(addProduct(newProduct));
-      onClose();
-      onProductAdded();
+      addProduct(newProduct, {
+        onSuccess: () => {
+          onClose();
+          onProductAdded();
+        },
+        onError: (error) => {
+          console.error('물품 등록에 실패했습니다.', error);
+        },
+      });
     } catch (error) {
       console.error('물품 등록에 실패했습니다.', error);
     }
